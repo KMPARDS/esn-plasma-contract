@@ -14,10 +14,11 @@
   },
   "license": "ISC",
   "dependencies": {
+    "eth-proof": "^2.1.4",
     "ethers": "4.0.41",
     "fs-extra": "8.1.0",
     "ganache-cli": "6.4.5",
     "mocha": "6.1.4",
-    "solc": "^0.6.2"
+    "solc": "^0.6.3"
   }
 }

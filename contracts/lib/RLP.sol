@@ -1,7 +1,7 @@
 /**
  * Credits: https://github.com/hamdiallam/Solidity-RLP/blob/master/contracts/RLPReader.sol
  */
-pragma solidity ^0.6.2;
+pragma solidity ^0.6.3;
 
 library RLP {
   uint8 constant STRING_SHORT_START = 0x80;
@@ -48,7 +48,7 @@ library RLP {
   /*
   * @param item RLP encoded bytes
   */
-  function toRlpItem(bytes memory item) internal pure returns (RLPItem memory) {
+  function toRLPItem(bytes memory item) internal pure returns (RLPItem memory) {
     uint memPtr;
     assembly {
       memPtr := add(item, 0x20)
@@ -121,7 +121,7 @@ library RLP {
   /** RLPItem conversions into data types **/
 
   // @returns raw rlp encoding in bytes
-  function toRlpBytes(RLPItem memory item) internal pure returns (bytes memory) {
+  function toRLPBytes(RLPItem memory item) internal pure returns (bytes memory) {
     bytes memory result = new bytes(item.len);
     if (result.length == 0) return result;
 
@@ -173,6 +173,27 @@ library RLP {
     return result;
   }
 
+  function toUint8(RLPItem memory item) internal pure returns (uint8) {
+    require(item.len > 0 && item.len <= 33);
+
+    uint offset = _payloadOffset(item.memPtr);
+    uint len = item.len - offset;
+
+    uint8 result;
+    uint memPtr = item.memPtr + offset;
+    assembly {
+      result := mload(memPtr)
+
+      // shfit to the correct location if neccesary
+      if lt(len, 32) {
+          result := div(result, exp(256, sub(32, len)))
+      }
+    }
+
+    return result;
+  }
+
+
   // enforces 32 byte length
   function toUintStrict(RLPItem memory item) internal pure returns (uint) {
     // one byte prefix
@@ -201,6 +222,25 @@ library RLP {
 
     copy(item.memPtr + offset, destPtr, len);
     return result;
+  }
+
+  event BytesM(bytes _bytes, string _m);
+  event Uint256M(uint256 _num, string _m);
+  function toData(RLPItem memory item) internal pure returns (bytes memory bts) {
+    require(!isList(item));
+    uint offset = _payloadOffset(item.memPtr);
+    uint len = item.len - offset;
+    bts = new bytes(len);
+    uint btsPtr;
+    assembly {
+      btsPtr := add(0x20, bts)
+    }
+
+    copy(item.memPtr+offset, btsPtr, len);
+  }
+
+  function toBytes32(RLPItem memory item) internal pure returns (bytes32) {
+    return bytes32(toUint(item));
   }
 
   /*
